@@ -1,0 +1,9 @@
+Package: com.rpetrich.runningindicator
+Priority: optional
+Section: Tweaks
+Architecture: iphoneos-arm
+Version: 0.1
+Description: Running app icons glow
+Name: RunningIndicator
+Depends: firmware (>= 4.0), mobilesubstrate, preferenceloader
+Author: Ryan Petrich <rpetrich+runningindicator@gmail.com>
