@@ -2,6 +2,7 @@
 
 static NSMutableSet *runningIcons;
 static BOOL showCloseButtons;
+static BOOL showGlowImage;
 
 %hook SBAppSwitcherController
 
@@ -17,7 +18,7 @@ static BOOL showCloseButtons;
 		dropGlow.image = [UIImage imageNamed:@"RunningGlow"];
 		[UIView beginAnimations:nil context:NULL];
 		[UIView setAnimationDuration:1.0];
-		[icon showDropGlow:YES];
+		[icon showDropGlow:showGlowImage];
 		[icon setShowsCloseBox:showCloseButtons];
 		[UIView commitAnimations];
 	}
@@ -61,6 +62,12 @@ static BOOL showCloseButtons;
 		%orig;
 }
 
+- (void)showDropGlow:(BOOL)showDropGlow
+{
+	if (showDropGlow || !showGlowImage || ![runningIcons containsObject:self])
+		%orig;
+}
+
 %end
 
 static void LoadSettings()
@@ -68,14 +75,18 @@ static void LoadSettings()
 	NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.rpetrich.runningindicator.plist"];
 	id temp = [settings objectForKey:@"RIShowCloseButtons"];
 	showCloseButtons = temp ? [temp boolValue] : YES;
+	id temp2 = [settings objectForKey:@"RIShowGlowImage"];
+	showGlowImage = temp2 ? [temp2 boolValue] : YES;
 	[settings release];
 }
 
 static void SettingsChanged(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
 	LoadSettings();
-	for (SBIcon *icon in runningIcons)
+	for (SBIcon *icon in runningIcons) {
 		[icon setShowsCloseBox:showCloseButtons];
+		[icon showDropGlow:showGlowImage];
+	}
 }
 
 %ctor
