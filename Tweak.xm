@@ -3,7 +3,6 @@
 static NSMutableSet *runningIcons;
 static BOOL showCloseButtons;
 static BOOL showGlowImage;
-static int iconType;
 
 %hook SBAppSwitcherController
 
@@ -71,16 +70,6 @@ static int iconType;
 
 %end
 
-%hook SBIconController
-
--(int)closeBoxTypeForIcon:(id)icon
-{
-		return iconType;
-}
-
-%end
-
-
 static void LoadSettings()
 {
 	NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.rpetrich.runningindicator.plist"];
@@ -88,8 +77,6 @@ static void LoadSettings()
 	showCloseButtons = temp ? [temp boolValue] : YES;
 	id temp2 = [settings objectForKey:@"RIShowGlowImage"];
 	showGlowImage = temp2 ? [temp2 boolValue] : YES;
-	id temp3 = [settings objectForKey:@"IconType"];
-	iconType = temp3 ? [temp3 intValue] : 0;
 	[settings release];
 }
 
