@@ -11,15 +11,19 @@ static BOOL showCloseButtons;
 	SBIcon *icon = [iconModel applicationIconForDisplayIdentifier:[application displayIdentifier]];
 	if (icon) {
 		[runningIcons addObject:icon];
-		[icon setShowsImages:YES];
-		[icon prepareDropGlow];
-		UIImageView *dropGlow = [icon dropGlow];
-		dropGlow.image = [UIImage imageNamed:@"RunningGlow"];
-		[UIView beginAnimations:nil context:NULL];
-		[UIView setAnimationDuration:1.0];
-		[icon showDropGlow:YES];
-		[icon setShowsCloseBox:showCloseButtons];
-		[UIView commitAnimations];
+		SBIconView *iconView = %c(SBIconViewMap) ? [[%c(SBIconViewMap) homescreenMap] mappedIconViewForIcon:icon] : (SBIconView *)icon;
+		if (iconView) {
+			if ([icon respondsToSelector:@selector(setShowsImages:)])
+				[icon setShowsImages:YES];
+			[iconView prepareDropGlow];
+			UIImageView *dropGlow = [iconView dropGlow];
+			dropGlow.image = [UIImage imageNamed:@"RunningGlow"];
+			[UIView beginAnimations:nil context:NULL];
+			[UIView setAnimationDuration:1.0];
+			[iconView showDropGlow:YES];
+			[iconView setShowsCloseBox:showCloseButtons];
+			[UIView commitAnimations];
+		}
 	}
 	%orig;
 }
@@ -30,11 +34,14 @@ static BOOL showCloseButtons;
 	SBIcon *icon = [iconModel applicationIconForDisplayIdentifier:[application displayIdentifier]];
 	if (icon) {
 		[runningIcons removeObject:icon];
-		[UIView beginAnimations:nil context:NULL];
-		[UIView setAnimationDuration:1.0];
-		[icon showDropGlow:NO];
-		[icon setShowsCloseBox:NO];
-		[UIView commitAnimations];
+		SBIconView *iconView = %c(SBIconViewMap) ? [[%c(SBIconViewMap) homescreenMap] mappedIconViewForIcon:icon] : (SBIconView *)icon;
+		if (iconView) {
+			[UIView beginAnimations:nil context:NULL];
+			[UIView setAnimationDuration:1.0];
+			[iconView showDropGlow:NO];
+			[iconView setShowsCloseBox:NO];
+			[UIView commitAnimations];
+		}
 	}
 	%orig;
 }
@@ -63,6 +70,22 @@ static BOOL showCloseButtons;
 
 %end
 
+%hook SBIconViewMap
+
+- (void)_addIconView:(SBIconView *)iconView forIcon:(SBIcon *)icon
+{
+	%orig;
+	if ([runningIcons containsObject:icon]) {
+		[iconView prepareDropGlow];
+		UIImageView *dropGlow = [iconView dropGlow];
+		dropGlow.image = [UIImage imageNamed:@"RunningGlow"];
+		[iconView showDropGlow:YES];
+		[iconView setShowsCloseBox:showCloseButtons];
+	}
+}
+
+%end
+
 static void LoadSettings()
 {
 	NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.rpetrich.runningindicator.plist"];
@@ -74,8 +97,14 @@ static void LoadSettings()
 static void SettingsChanged(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
 	LoadSettings();
-	for (SBIcon *icon in runningIcons)
-		[icon setShowsCloseBox:showCloseButtons];
+	if (%c(SBIconViewMap)) {
+		SBIconViewMap *map = [%c(SBIconViewMap) homescreenMap];
+		for (SBIcon *icon in runningIcons)
+			[[map mappedIconViewForIcon:icon] setShowsCloseBox:showCloseButtons];
+	} else {
+		for (SBIcon *icon in runningIcons)
+			[icon setShowsCloseBox:showCloseButtons];
+	}
 }
 
 %ctor
