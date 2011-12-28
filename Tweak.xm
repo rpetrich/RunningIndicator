@@ -64,8 +64,29 @@ static BOOL showCloseButtons;
 
 - (void)setShowsCloseBox:(BOOL)newValue
 {
-	if (newValue || !showCloseButtons || ![runningIcons containsObject:self])
-		%orig;
+	%orig(newValue || ([runningIcons containsObject:self] && showCloseButtons));
+}
+
+%end
+
+%hook SBIconView
+
+- (void)closeBoxTapped
+{
+	SBApplicationIcon *icon = (SBApplicationIcon *)self.icon;
+	if (showCloseButtons && [runningIcons containsObject:icon]) {
+		SBIconController *iconController = [%c(SBIconController) sharedInstance];
+		if (![iconController isEditing] || ![iconController canUninstallIcon:icon]) {
+			[[icon application] kill];
+			return;
+		}
+	}
+	%orig;
+}
+
+- (void)setShowsCloseBox:(BOOL)newValue animated:(BOOL)animated
+{
+	%orig(newValue || ([runningIcons containsObject:self.icon] && showCloseButtons), animated);
 }
 
 %end
