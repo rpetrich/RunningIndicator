@@ -1,9 +1,15 @@
 Package: com.rpetrich.runningindicator
 Priority: optional
 Section: Tweaks
+Maintainer: BigBoss <bigboss@thebigboss.org>
 Architecture: iphoneos-arm
 Version: 0.1
 Description: Running app icons glow
 Name: RunningIndicator
 Depends: firmware (>= 4.0), mobilesubstrate, preferenceloader
+Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=runningindicatorData
+Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=runningindicatorData
+Sponsor: thebigboss.org <http://thebigboss.org>
 Author: Ryan Petrich <rpetrich+runningindicator@gmail.com>
+Tag: purpose::extension
+dev: rpetrich
