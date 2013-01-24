@@ -1,4 +1,5 @@
 #import "SpringBoard.h"
+#include <sys/stat.h>
 
 static NSMutableSet *runningIcons;
 static BOOL showCloseButtons;
@@ -21,7 +22,7 @@ static BOOL showCloseButtons;
 			[UIView beginAnimations:nil context:NULL];
 			[UIView setAnimationDuration:1.0];
 			[iconView showDropGlow:YES];
-			[iconView setShowsCloseBox:showCloseButtons];
+			[iconView setShowsCloseBox:NO];
 			[UIView commitAnimations];
 		}
 	}
@@ -62,9 +63,12 @@ static BOOL showCloseButtons;
 	%orig;
 }
 
-- (void)setShowsCloseBox:(BOOL)newValue
-{
-	%orig(newValue || ([runningIcons containsObject:self] && showCloseButtons));
+- (void)setShowsCloseBox:(BOOL)newValue {
+	struct stat st;
+	if (stat([[[[self application] bundle] executablePath] UTF8String], &st) == -1)
+		%orig;
+	else
+		%orig(newValue || ([runningIcons containsObject:self] && showCloseButtons && st.st_uid!=0));
 }
 
 %end
@@ -73,7 +77,7 @@ static BOOL showCloseButtons;
 
 - (void)closeBoxTapped
 {
-	SBApplicationIcon *icon = (SBApplicationIcon *)self.icon;
+	SBApplicationIcon *icon = (SBApplicationIcon *)[self icon];
 	if (showCloseButtons && [runningIcons containsObject:icon]) {
 		SBIconController *iconController = [%c(SBIconController) sharedInstance];
 		if (![iconController isEditing] || ![iconController canUninstallIcon:icon]) {
@@ -86,7 +90,11 @@ static BOOL showCloseButtons;
 
 - (void)setShowsCloseBox:(BOOL)newValue animated:(BOOL)animated
 {
-	%orig(newValue || ([runningIcons containsObject:self.icon] && showCloseButtons), animated);
+	struct stat st;
+	if (stat([[[[(SBApplicationIcon *)[self icon] application] bundle] executablePath] UTF8String], &st) == -1)
+		%orig;
+	else
+		%orig(newValue || ([runningIcons containsObject:[self icon]] && showCloseButtons && st.st_uid!=0), animated);
 }
 
 %end
@@ -109,7 +117,7 @@ static BOOL showCloseButtons;
 
 static void LoadSettings()
 {
-	NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.rpetrich.runningindicator.plist"];
+	NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Library/Preferences/com.rpetrich.runningindicator.plist", NSHomeDirectory()]];
 	id temp = [settings objectForKey:@"RIShowCloseButtons"];
 	showCloseButtons = temp ? [temp boolValue] : YES;
 	[settings release];
@@ -121,10 +129,10 @@ static void SettingsChanged(CFNotificationCenterRef center, void *observer, CFSt
 	if (%c(SBIconViewMap)) {
 		SBIconViewMap *map = [%c(SBIconViewMap) homescreenMap];
 		for (SBIcon *icon in runningIcons)
-			[[map mappedIconViewForIcon:icon] setShowsCloseBox:showCloseButtons];
+			[[map mappedIconViewForIcon:icon] setShowsCloseBox:NO];
 	} else {
 		for (SBIcon *icon in runningIcons)
-			[icon setShowsCloseBox:showCloseButtons];
+			[icon setShowsCloseBox:NO];
 	}
 }
 
