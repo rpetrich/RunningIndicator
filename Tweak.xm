@@ -3,12 +3,18 @@
 static NSMutableSet *runningIcons;
 static BOOL showCloseButtons;
 
+static int (*BKSTerminateApplicationForReasonAndReportWithDescription)(NSString *displayIdentifier, int reason, int something, int something2);
+
 %hook SBAppSwitcherController
 
-- (void)applicationLaunched:(SBApplication *)application
+static SBIconModel *SharedIconModel(void)
 {
-	SBIconModel *iconModel = [%c(SBIconModel) sharedInstance];
-	SBIcon *icon = [iconModel applicationIconForDisplayIdentifier:[application displayIdentifier]];
+	return %c(SBIconViewMap) ? [[%c(SBIconViewMap) homescreenMap] iconModel] : [%c(SBIconModel) sharedInstance];
+}
+
+static void ApplicationLaunched(SBApplication *application)
+{
+	SBIcon *icon = [SharedIconModel() applicationIconForDisplayIdentifier:[application displayIdentifier]];
 	if (icon) {
 		[runningIcons addObject:icon];
 		SBIconView *iconView = %c(SBIconViewMap) ? [[%c(SBIconViewMap) homescreenMap] mappedIconViewForIcon:icon] : (SBIconView *)icon;
@@ -25,13 +31,11 @@ static BOOL showCloseButtons;
 			[UIView commitAnimations];
 		}
 	}
-	%orig;
 }
 
-- (void)applicationDied:(SBApplication *)application
+static void ApplicationDied(SBApplication *application)
 {
-	SBIconModel *iconModel = [%c(SBIconModel) sharedInstance];
-	SBIcon *icon = [iconModel applicationIconForDisplayIdentifier:[application displayIdentifier]];
+	SBIcon *icon = [SharedIconModel() applicationIconForDisplayIdentifier:[application displayIdentifier]];
 	if (icon) {
 		[runningIcons removeObject:icon];
 		SBIconView *iconView = %c(SBIconViewMap) ? [[%c(SBIconViewMap) homescreenMap] mappedIconViewForIcon:icon] : (SBIconView *)icon;
@@ -43,7 +47,36 @@ static BOOL showCloseButtons;
 			[UIView commitAnimations];
 		}
 	}
+}
+
+static void KillApplication(SBApplication *app)
+{
+	if (BKSTerminateApplicationForReasonAndReportWithDescription != NULL) {
+		BKSTerminateApplicationForReasonAndReportWithDescription([app displayIdentifier], 1, 0, 0);
+	} else {
+		[app kill];
+	}
+}
+
+- (void)applicationLaunched:(SBApplication *)application
+{
+	ApplicationLaunched(application);
 	%orig;
+}
+
+- (void)applicationDied:(SBApplication *)application
+{
+	ApplicationDied(application);
+	%orig;
+}
+
+- (void)_appActivationStateDidChange:(NSNotification *)notification
+{
+	SBApplication *app = notification.object;
+	if ([app isRunning])
+		ApplicationLaunched(app);
+	else
+		ApplicationDied(app);
 }
 
 %end
@@ -55,7 +88,7 @@ static BOOL showCloseButtons;
 	if (showCloseButtons && [runningIcons containsObject:self]) {
 		SBIconController *iconController = [%c(SBIconController) sharedInstance];
 		if (![iconController isEditing] || ![iconController canUninstallIcon:self]) {
-			[[self application] kill];
+			KillApplication([self application]);
 			return;
 		}
 	}
@@ -77,7 +110,7 @@ static BOOL showCloseButtons;
 	if (showCloseButtons && [runningIcons containsObject:icon]) {
 		SBIconController *iconController = [%c(SBIconController) sharedInstance];
 		if (![iconController isEditing] || ![iconController canUninstallIcon:icon]) {
-			[[icon application] kill];
+			KillApplication([icon application]);
 			return;
 		}
 	}
@@ -132,6 +165,10 @@ static void SettingsChanged(CFNotificationCenterRef center, void *observer, CFSt
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	%init;
+	void *bk = dlopen("/System/Library/PrivateFrameworks/BackBoardServices.framework/BackBoardServices", RTLD_LAZY);
+	if (bk) {
+		BKSTerminateApplicationForReasonAndReportWithDescription = (int (*)(NSString*, int, int, int))dlsym(bk, "BKSTerminateApplicationForReasonAndReportWithDescription");
+	}
 	LoadSettings();
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, SettingsChanged, CFSTR("com.rpetrich.runningindicator/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 	runningIcons = [[NSMutableSet alloc] init];
