@@ -77,6 +77,7 @@ static void KillApplication(SBApplication *app)
 		ApplicationLaunched(app);
 	else
 		ApplicationDied(app);
+	%orig();
 }
 
 %end
