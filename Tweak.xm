@@ -9,7 +9,7 @@ static int (*BKSTerminateApplicationForReasonAndReportWithDescription)(NSString 
 
 static SBIconModel *SharedIconModel(void)
 {
-	return %c(SBIconViewMap) ? [[%c(SBIconViewMap) homescreenMap] iconModel] : [%c(SBIconModel) sharedInstance];
+	return [%c(SBIconViewMap) instancesRespondToSelector:@selector(iconModel)] ? [[%c(SBIconViewMap) homescreenMap] iconModel] : [%c(SBIconModel) sharedInstance];
 }
 
 static void ApplicationLaunched(SBApplication *application)
