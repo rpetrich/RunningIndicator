@@ -209,3 +209,11 @@
 -(void)_modelReloadedState;
 -(void)iconAccessoriesDidUpdate:(SBIcon *)icon;
 @end
+
+@interface SBIconViewMap (iOS6)
+@property (nonatomic, readonly) SBIconModel *iconModel;
+@end
+
+@interface SBApplication (iOS6)
+- (BOOL)isRunning;
+@end
