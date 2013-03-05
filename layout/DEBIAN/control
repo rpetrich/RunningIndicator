@@ -3,7 +3,7 @@ Priority: optional
 Section: Tweaks
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Architecture: iphoneos-arm
-Version: 1.0
+Version: 1.0.1
 Description: Running app icons glow
 Name: RunningIndicator
 Depends: firmware (>= 4.0), mobilesubstrate, preferenceloader
