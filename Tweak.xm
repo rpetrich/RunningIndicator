@@ -2,6 +2,7 @@
 
 static NSMutableSet *runningIcons;
 static BOOL showCloseButtons;
+static BOOL showInSwitcher;
 
 static int (*BKSTerminateApplicationForReasonAndReportWithDescription)(NSString *displayIdentifier, int reason, int something, int something2);
 
@@ -130,7 +131,7 @@ static void KillApplication(SBApplication *app)
 - (void)_addIconView:(SBIconView *)iconView forIcon:(SBIcon *)icon
 {
 	%orig;
-	if ([runningIcons containsObject:icon]) {
+	if ([runningIcons containsObject:icon] && (showInSwitcher || self == [%c(SBIconViewMap) homescreenMap])) {
 		[iconView prepareDropGlow];
 		UIImageView *dropGlow = [iconView dropGlow];
 		dropGlow.image = [UIImage imageNamed:@"RunningGlow"];
@@ -146,6 +147,8 @@ static void LoadSettings()
 	NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.rpetrich.runningindicator.plist"];
 	id temp = [settings objectForKey:@"RIShowCloseButtons"];
 	showCloseButtons = temp ? [temp boolValue] : YES;
+	temp = [settings objectForKey:@"RIShowInSwitcher"];
+	showInSwitcher = temp ? [temp boolValue] : YES;
 	[settings release];
 }
 

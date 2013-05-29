@@ -31,6 +31,20 @@
 			<key>PostNotification</key>
 			<string>com.rpetrich.runningindicator/settingschanged</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.rpetrich.runningindicator</string>
+			<key>key</key>
+			<string>RIShowInSwitcher</string>
+			<key>label</key>
+			<string>Show In Switcher</string>
+			<key>PostNotification</key>
+			<string>com.rpetrich.runningindicator/settingschanged</string>
+		</dict>
 	</array>
 </dict>
 </plist>
