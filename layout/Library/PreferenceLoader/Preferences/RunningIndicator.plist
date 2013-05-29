@@ -10,6 +10,8 @@
 		<string>PSLinkCell</string>
 		<key>label</key>
 		<string>Running Indicator</string>
+		<key>icon</key>
+		<string>/Applications/Preferences.app/icon-table.png</string>
 	</dict>
 	<key>items</key>
 	<array>
