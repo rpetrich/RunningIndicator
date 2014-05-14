@@ -109,7 +109,7 @@ static void KillApplication(SBApplication *app)
 - (void)closeBoxTapped
 {
 	SBApplicationIcon *icon = (SBApplicationIcon *)self.icon;
-	if (showCloseButtons && [runningIcons containsObject:icon]) {
+	if (showCloseButtons && [runningIcons containsObject:icon] && [self location] != 2) {
 		SBIconController *iconController = [%c(SBIconController) sharedInstance];
 		if (![iconController isEditing] || ![iconController canUninstallIcon:icon]) {
 			KillApplication([icon application]);
